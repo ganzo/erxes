@@ -1,24 +1,34 @@
 import { composeWithTracker } from 'react-komposer';
 import { Meteor } from 'meteor/meteor';
-import { assign as assignMethod, unassign } from '/imports/api/tickets/methods';
+import { assign as assignMethod, unassign } from '/imports/api/conversations/methods';
 import { AssignBox } from '../components';
+import { Conversations } from '/imports/api/conversations/conversations';
+import { Spinner } from '/imports/react-ui/common';
 
 
 function composer(props, onData) {
-  const assign = (ticketIds, assignedUserId, callback) => {
-    assignMethod.call({ ticketIds, assignedUserId }, callback);
+  const assign = ({ targetIds, assignedUserId }, callback) => {
+    assignMethod.call({ conversationIds: targetIds, assignedUserId }, callback);
   };
 
-  const clear = (ticketIds, callback) => {
-    unassign.call({ ticketIds }, callback);
+  const clear = (conversationIds, callback) => {
+    unassign.call({ conversationIds }, callback);
   };
 
-  onData(null, {
-    ticket: props.ticket,
-    assignees: Meteor.users.find().fetch(),
-    assign,
-    clear,
-  });
+  const targets = Conversations.find({ _id: { $in: props.targets } }).fetch();
+
+  const usersHandle = Meteor.subscribe('users.list', {});
+
+  if (usersHandle.ready()) {
+    const assignees = Meteor.users.find().fetch();
+
+    onData(null, {
+      targets,
+      assignees,
+      assign,
+      clear,
+    });
+  }
 }
 
-export default composeWithTracker(composer)(AssignBox);
+export default composeWithTracker(composer, Spinner)(AssignBox);

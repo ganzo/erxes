@@ -1,6 +1,8 @@
 import React, { PropTypes, Component } from 'react';
+import { _ } from 'meteor/underscore';
 import { NotificationListRow } from '../../containers';
 import { Button } from 'react-bootstrap';
+import Alert from 'meteor/erxes-notifier';
 import { Wrapper } from '../';
 import { EmptyState } from '/imports/react-ui/common';
 import Sidebar from '/imports/react-ui/settings/Sidebar.jsx';
@@ -11,30 +13,23 @@ class NotificationList extends Component {
     super(props);
 
     this.state = { bulk: [] };
-    this.markAsRead = this.markAsRead.bind(this);
-    this.toggleBulk = this.toggleBulk.bind(this);
+    this.markAllRead = this.markAllRead.bind(this);
   }
 
-  markAsRead() {
-    this.props.markAsRead(this.state.bulk);
-    this.setState({ bulk: [] });
-  }
-
-  toggleBulk(notificationId, toAdd) {
+  markAllRead() {
     const { bulk } = this.state;
-    const index = bulk.indexOf(notificationId);
-
-    if (toAdd) {
-      if (index < 0) {
-        bulk.push(notificationId);
+    _.each(this.props.notifications, (notification) => {
+      if (!notification.isRead) {
+        bulk.push(notification._id);
       }
-    } else {
-      if (index > -1) {
-        bulk.splice(index, 1);
+    });
+    this.props.markAsRead(this.state.bulk, error => {
+      if (error) {
+        return Alert.error('Error', error.reason);
       }
-    }
-
-    this.setState({ bulk });
+      return Alert.success('All notifications have been seen');
+    });
+    this.setState({ bulk: [] });
   }
 
   render() {
@@ -42,11 +37,10 @@ class NotificationList extends Component {
     const notifCount = notifications.length;
 
     let content = (
-      <ul className="tickets-list notif-list">
+      <ul className="conversations-list notif-list">
         {
           notifications.map((notif, key) =>
             <NotificationListRow
-              toggleBulk={this.toggleBulk}
               notification={notif}
               key={key}
             />
@@ -67,8 +61,8 @@ class NotificationList extends Component {
 
     const actionBarLeft = (
       <div>
-        <Button bsStyle="link" onClick={this.markAsRead}>
-          <i className="ion-checkmark-circled" /> Mark as read
+        <Button bsStyle="link" onClick={this.markAllRead}>
+          <i className="ion-checkmark-circled" /> Mark all Read
         </Button>
       </div>
     );
@@ -78,7 +72,7 @@ class NotificationList extends Component {
       <Wrapper
         header={<Wrapper.Header breadcrumb={[{ title: 'Notifications' }]} />}
         leftSidebar={<Sidebar />}
-        actionBar={this.state.bulk.length ? actionBar : false}
+        actionBar={actionBar}
         content={content}
       />
     );

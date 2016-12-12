@@ -1,15 +1,16 @@
 import React, { PropTypes, Component } from 'react';
 import moment from 'moment';
 import { Button, Collapse } from 'react-bootstrap';
+import Alert from 'meteor/erxes-notifier';
 import { Wrapper } from '/imports/react-ui/layout/components';
 import { NameCard, EmptyState, Tagger } from '/imports/react-ui/common';
 import { AssignBox } from '../../containers';
-import { TICKET_STATUSES } from '/imports/api/tickets/constants';
+import { CONVERSATION_STATUSES } from '/imports/api/conversations/constants';
 
 
 const propTypes = {
-  ticket: PropTypes.object.isRequired,
-  commentsCount: PropTypes.number.isRequired,
+  conversation: PropTypes.object.isRequired,
+  messagesCount: PropTypes.number.isRequired,
   changeStatus: PropTypes.func.isRequired,
 };
 
@@ -18,10 +19,11 @@ class Sidebar extends Component {
     super(props);
 
     this.state = {
-      // current ticket is open or closed
-      status: props.ticket.status,
+      // current conversation is open or closed
+      status: props.conversation.status,
 
       isTaggerVisible: false,
+      isAssignerVisible: false,
     };
 
     this.changeStatus = this.changeStatus.bind(this);
@@ -29,16 +31,22 @@ class Sidebar extends Component {
 
   // change resolved status
   changeStatus() {
-    let status = TICKET_STATUSES.CLOSED;
+    let status = CONVERSATION_STATUSES.CLOSED;
 
-    if (this.state.status === TICKET_STATUSES.CLOSED) {
-      status = TICKET_STATUSES.OPEN;
+    if (this.state.status === CONVERSATION_STATUSES.CLOSED) {
+      status = CONVERSATION_STATUSES.OPEN;
     }
 
     this.setState({ status });
 
     // call change status method
-    this.props.changeStatus(this.props.ticket._id, status, () => {});
+    this.props.changeStatus(this.props.conversation._id, status, () => {
+      if (this.state.status === CONVERSATION_STATUSES.CLOSED) {
+        Alert.success('The conversation has been resolved!');
+      } else {
+        Alert.info('The conversation has been reopened and restored to Inbox.');
+      }
+    });
   }
 
   renderStatusButton() {
@@ -46,7 +54,7 @@ class Sidebar extends Component {
     let bsStyle = 'success';
     let icon = <i className="ion-checkmark-circled" />;
 
-    if (this.state.status === TICKET_STATUSES.CLOSED) {
+    if (this.state.status === CONVERSATION_STATUSES.CLOSED) {
       text = 'Open';
       bsStyle = 'warning';
       icon = <i className="ion-refresh" />;
@@ -64,7 +72,8 @@ class Sidebar extends Component {
   }
 
   render() {
-    const { ticket, commentsCount } = this.props;
+    const { conversation, messagesCount } = this.props;
+
     return (
       <Wrapper.Sidebar>
         {this.renderStatusButton()}
@@ -75,18 +84,18 @@ class Sidebar extends Component {
             <li>
               Opened
               <span className="counter">
-                {moment(ticket.createdAt).fromNow()}
+                {moment(conversation.createdAt).fromNow()}
               </span>
             </li>
             <li>
               Brand
               <span className="counter">
-                {ticket.brand().name}
+                {conversation.integration().brand().name}
               </span>
             </li>
             <li>
               Conversations
-              <span className="counter">{commentsCount}</span>
+              <span className="counter">{messagesCount}</span>
             </li>
           </ul>
         </Wrapper.Sidebar.Section>
@@ -94,22 +103,38 @@ class Sidebar extends Component {
         <Wrapper.Sidebar.Section>
           <h3>
             Assigned to
-            <AssignBox ticket={ticket}>
-              <a href="#" className="quick-button">
-                <i className="ion-gear-a" />
-              </a>
-            </AssignBox>
+            <a
+              href="#"
+              className="quick-button"
+              onClick={(e) => {
+                e.preventDefault();
+                const { isAssignerVisible } = this.state;
+                this.setState({ isAssignerVisible: !isAssignerVisible });
+              }}
+            >
+              <i className="ion-gear-a" />
+            </a>
           </h3>
+
+          <Collapse in={this.state.isAssignerVisible}>
+            <div>
+              <AssignBox
+                targets={[conversation._id]}
+                className="sidebar-accordion"
+                event="onClick"
+              />
+            </div>
+          </Collapse>
           <ul className="filters no-link">
             {
-              !ticket.assignedUser() ?
+              !conversation.assignedUser() ?
                 <EmptyState
                   icon={<i className="ion-person" />}
                   text="Not assigned yet"
                   size="small"
                 /> :
                 <li>
-                  <NameCard user={ticket.assignedUser()} avatarSize={45} />
+                  <NameCard user={conversation.assignedUser()} avatarSize={45} />
                 </li>
             }
           </ul>
@@ -118,13 +143,13 @@ class Sidebar extends Component {
         <Wrapper.Sidebar.Section>
           <h3>Participators</h3>
           <ul className="filters no-link">
-            {ticket.participatedUsers().map((user) =>
+            {conversation.participatedUsers().map((user) =>
               <li key={user._id}>
                 <NameCard user={user} avatarSize={45} />
               </li>
             )}
             {
-              ticket.participatedUsers().length === 0 ?
+              conversation.participatedUsers().length === 0 ?
                 <EmptyState
                   icon={<i className="ion-at" />}
                   text="Not participated yet"
@@ -154,8 +179,8 @@ class Sidebar extends Component {
           <Collapse in={this.state.isTaggerVisible}>
             <div>
               <Tagger
-                type="ticket"
-                targets={[this.props.ticket]}
+                type="conversation"
+                targets={[this.props.conversation._id]}
                 className="sidebar-accordion"
                 event="onClick"
               />
@@ -164,15 +189,19 @@ class Sidebar extends Component {
 
           <ul className="filters">
             <li>
-              {ticket.tags().map((tag) =>
+              {conversation.tags().map((tag) =>
                 <a key={tag._id}>
-                  <i className="icon ion-pricetag" style={{ color: tag.colorCode }}></i>
+                  <i
+                    className="icon ion-pricetag"
+                    style={{ color: tag.colorCode }}
+                  >
+                  </i>
                   {tag.name}
                 </a>
               )}
             </li>
             {
-              ticket.tags().length === 0 ?
+              conversation.tags().length === 0 ?
                 <EmptyState
                   icon={<i className="ion-pricetags" />}
                   text="Not tagged yet"

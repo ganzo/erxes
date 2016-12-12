@@ -59,6 +59,10 @@
         display: block;
         padding: 5px 20px;
         color: $text-color;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding-right: 30px;
 
         &:hover, &.active {
           background-color: $grey-light;
@@ -100,4 +104,12 @@
   border-top: 1px solid $grey;
   border-bottom: 1px solid $grey;
   margin-bottom: 10px;
+
+  .popover-header {
+    background: none;
+  }
+
+  .popover-list {
+    max-height: none;
+  }
 }

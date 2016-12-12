@@ -120,20 +120,6 @@ if (Meteor.isServer) {
           );
         });
 
-        it('access denied', function () {
-          assert.throws(
-            () => {
-              edit._execute(
-                { userId: Factory.create('user')._id },
-                { id: brandId, doc: { name: 'Bar' } }
-              );
-            },
-
-            Meteor.Error,
-            /brands.edit.accessDenied/
-          );
-        });
-
         it('edit', function () {
           edit._execute(
             { userId },
@@ -164,28 +150,6 @@ if (Meteor.isServer) {
 
             Meteor.Error,
             /brands.remove.notFound/
-          );
-        });
-
-        it('access denied', function () {
-          assert.throws(
-            () => {
-              remove._execute({ userId: Factory.create('user')._id }, brandId);
-            },
-
-            Meteor.Error,
-            /brands.remove.accessDenied/
-          );
-        });
-
-        it('can not delete brand with customer', function () {
-          assert.throws(
-            () => {
-              remove._execute({ userId }, brandId);
-            },
-
-            Meteor.Error,
-            /brands.remove.restricted/
           );
         });
 

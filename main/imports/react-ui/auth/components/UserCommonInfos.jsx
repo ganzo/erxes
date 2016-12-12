@@ -4,6 +4,7 @@ import {
   ControlLabel,
   FormControl,
 } from 'react-bootstrap';
+import Alert from 'meteor/erxes-notifier';
 import uploadHandler from '/imports/api/client/uploadHandler';
 
 
@@ -41,6 +42,8 @@ class UserCommonInfos extends React.Component {
           avatar: response.url,
           avatarPreviewStyle: { opacity: '1' },
         });
+
+        Alert.info('Looking good!');
       },
 
       afterRead: ({ result }) => {
@@ -100,6 +103,15 @@ class UserCommonInfos extends React.Component {
             type="email"
             id="email"
             defaultValue={user.emails[0].address}
+          />
+        </FormGroup>
+
+        <FormGroup>
+          <ControlLabel>Twitter username</ControlLabel>
+          <FormControl
+            type="text"
+            id="twitterUsername"
+            defaultValue={user.details.twitterUsername}
           />
         </FormGroup>
       </div>

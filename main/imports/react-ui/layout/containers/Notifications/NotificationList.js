@@ -2,6 +2,7 @@ import { Meteor } from 'meteor/meteor';
 import { Notifications } from 'meteor/erxes-notifications';
 import { composeWithTracker } from 'react-komposer';
 import { NotificationList } from '../../components';
+import { Loader } from '/imports/react-ui/common';
 
 
 function composer(props, onData) {
@@ -10,8 +11,8 @@ function composer(props, onData) {
     requireRead: false,
   });
 
-  const markAsRead = (ids) => {
-    Meteor.call('notifications.markAsRead', ids);
+  const markAsRead = (ids, callback) => {
+    Meteor.call('notifications.markAsRead', ids, callback);
   };
 
   if (handler.ready()) {
@@ -28,4 +29,4 @@ function composer(props, onData) {
   }
 }
 
-export default composeWithTracker(composer)(NotificationList);
+export default composeWithTracker(composer, Loader)(NotificationList);

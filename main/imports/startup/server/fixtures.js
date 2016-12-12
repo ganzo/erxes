@@ -3,6 +3,7 @@ import { Accounts } from 'meteor/accounts-base';
 
 import { Brands } from '/imports/api/brands/brands';
 import { Channels } from '/imports/api/channels/channels';
+import { Integrations } from '/imports/api/integrations/integrations';
 
 // if the database is empty on server start, create some sample data.
 Meteor.startup(() => {
@@ -21,19 +22,22 @@ Meteor.startup(() => {
     fullName: 'Erxes Admin',
   });
 
-  if (Channels.find().count() === 0) {
-    Channels.insert({
-      userId,
-      memberIds: [userId],
-      name: 'Sales',
-    });
-  }
+  const brandId = Brands.insert({
+    userId,
+    name: 'Local publisher',
+    code: 'YDEdKj',
+  });
 
-  if (Brands.find().count() === 0) {
-    Brands.insert({
-      userId,
-      name: 'Local publisher',
-      code: 'YDEdKj',
-    });
-  }
+  const integrationId = Integrations.insert({
+    brandId,
+    name: 'Local publisher in app messaging',
+    kind: 'in_app_messaging',
+  });
+
+  Channels.insert({
+    userId,
+    memberIds: [userId],
+    integrationIds: [integrationId],
+    name: 'Sales',
+  });
 });

@@ -4,7 +4,6 @@ import { ValidatedMethod } from 'meteor/mdg:validated-method';
 import { _ } from 'meteor/underscore';
 
 import { ErxesMixin } from '/imports/api/utils';
-import { Customers } from '/imports/api/customers/customers';
 import { Brands, emailConfigSchema } from './brands';
 
 // brand add
@@ -39,11 +38,6 @@ export const edit = new ValidatedMethod({
       throw new Meteor.Error('brands.edit.notFound', 'Brand not found');
     }
 
-    if (this.userId !== brand.userId) {
-      throw new Meteor.Error('brands.edit.accessDenied',
-        'You don\'t have permission to edit this brand.');
-    }
-
     return Brands.update(id, { $set: doc });
   },
 });
@@ -63,21 +57,6 @@ export const remove = new ValidatedMethod({
 
     if (!brand) {
       throw new Meteor.Error('brands.remove.notFound', 'Brand not found');
-    }
-
-    if (this.userId !== brand.userId) {
-      throw new Meteor.Error('brands.remove.accessDenied',
-        'You don\'t have permission to remove this brand.');
-    }
-
-    // can't remove a brand with customers
-    const haveCustomers = Customers.findOne({
-      brandId: id,
-    });
-
-    if (haveCustomers) {
-      throw new Meteor.Error('brands.remove.restricted',
-        'Can\'t remove a brand with customers');
     }
 
     return Brands.remove(id);

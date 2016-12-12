@@ -1,54 +1,64 @@
-import ChatActions from './chat';
-import CustomerActions from './customer';
-import { store } from '../template.js';
+import { store } from '../template';
+import {
+  CONVERSATION_RECEIVED,
+  MESSAGE_RECEIVED,
+  USER_RECEIVED,
+  USER_CHANGED,
+  NOTIFICATION_RECEIVED,
+} from '../constants';
 
-
-export const Chat = ChatActions;
-export const Customer = CustomerActions;
 
 export function collectionItemAdded({ collection, _id, fields }) {
-  if (collection === 'ticket_comments') {
+  if (collection === 'conversations') {
     store.dispatch({
-      ...fields,
-      _id,
-      type: 'MESSAGE_RECEIVED',
+      type: CONVERSATION_RECEIVED,
+      conversation: { _id, ...fields },
     });
-  } else if (collection === 'users') {
+  }
+
+  if (collection === 'conversation_messages') {
     store.dispatch({
-      ...fields,
-      _id,
-      type: 'USER_RECEIVED',
+      type: MESSAGE_RECEIVED,
+      message: { _id, ...fields },
     });
-  } else if (collection === 'customers') {
+  }
+
+  if (collection === 'users') {
     store.dispatch({
-      ...fields,
-      _id,
-      type: 'CUSTOMER_RECEIVED',
+      type: USER_RECEIVED,
+      user: {
+        _id,
+        ...fields,
+      },
+    });
+  }
+
+  if (collection === 'counts') {
+    store.dispatch({
+      type: NOTIFICATION_RECEIVED,
+      name: _id,
+      count: fields.count,
     });
   }
 }
 
 export function collectionItemChanged({ collection, _id, fields, cleared }) {
-  if (collection === 'ticket_comments') {
+  if (collection === 'users') {
     store.dispatch({
-      fields,
+      type: USER_CHANGED,
+      user: {
+        _id,
+        ...fields,
+      },
       cleared,
-      _id,
-      type: 'MESSAGE_CHANGED',
     });
-  } else if (collection === 'users') {
+  }
+
+  if (collection === 'counts') {
     store.dispatch({
-      fields,
-      cleared,
-      _id,
-      type: 'USER_CHANGED',
-    });
-  } else if (collection === 'customers') {
-    store.dispatch({
-      fields,
-      cleared,
-      _id,
-      type: 'CUSTOMER_CHANGED',
+      type: NOTIFICATION_RECEIVED,
+      name: _id,
+      count: fields.count,
     });
   }
 }

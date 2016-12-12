@@ -7,22 +7,76 @@ import { _ } from 'meteor/underscore';
 import { Factory } from 'meteor/dburles:factory';
 import { SimpleSchema } from 'meteor/aldeed:simple-schema';
 
-import { Brands } from '/imports/api/brands/brands';
-import { Tickets } from '/imports/api/tickets/tickets';
+import { Integrations } from '/imports/api/integrations/integrations';
 import { Tags } from '/imports/api/tags/tags';
 
-const schema = new SimpleSchema({
-  email: {
-    type: String,
-    regEx: SimpleSchema.RegEx.Email,
+const inAppMessagingSchema = new SimpleSchema({
+  lastSeenAt: {
+    type: Date,
   },
 
+  sessionCount: {
+    type: Number,
+  },
+
+  isActive: {
+    type: Boolean,
+  },
+
+  customData: {
+    type: Object,
+    blackbox: true,
+    optional: true,
+  },
+});
+
+const twitterSchema = new SimpleSchema({
+  id: {
+    type: Number,
+  },
+
+  idStr: {
+    type: String,
+  },
+
+  name: {
+    type: String,
+  },
+
+  screenName: {
+    type: String,
+  },
+
+  profileImageUrl: {
+    type: String,
+  },
+});
+
+
+const facebookSchema = new SimpleSchema({
+  id: {
+    type: String,
+  },
+
+  profilePic: {
+    type: String,
+    optional: true,
+  },
+});
+
+const schema = new SimpleSchema({
   name: {
     type: String,
     optional: true,
   },
 
-  brandId: {
+  email: {
+    type: String,
+    regEx: SimpleSchema.RegEx.Email,
+    optional: true,
+  },
+
+  integrationId: {
     type: String,
     regEx: SimpleSchema.RegEx.Id,
   },
@@ -31,37 +85,28 @@ const schema = new SimpleSchema({
     type: Date,
   },
 
-  lastSeenAt: {
-    type: Date,
-  },
-
-  sessionCount: {
-    type: Number,
-    defaultValue: 0,
-  },
-
-  isActive: {
-    type: Boolean,
-    defaultValue: false,
-  },
-
-  data: {
-    type: Object,
-    blackbox: true,
+  // in app messaging data
+  inAppMessagingData: {
+    type: inAppMessagingSchema,
     optional: true,
   },
 
-  unreadCommentCount: {
-    type: Number,
+  // twitter data
+  twitterData: {
+    type: twitterSchema,
+    optional: true,
+  },
+
+  // facebook data
+  facebookData: {
+    type: facebookSchema,
+    optional: true,
   },
 });
 
 class CustomersCollection extends Mongo.Collection {
   insert(doc, callback) {
-    const customer = _.extend({
-      createdAt: new Date(),
-      unreadCommentCount: 0,
-    }, doc);
+    const customer = _.extend({ createdAt: new Date() }, doc);
 
     return super.insert(customer, callback);
   }
@@ -71,7 +116,9 @@ class CustomersCollection extends Mongo.Collection {
 
     const result = super.remove(selector, callback);
 
+    // remove tags
     let removeIds = [];
+
     customers.forEach((obj) => {
       removeIds.push(obj.tagIds || []);
     });
@@ -90,13 +137,13 @@ Customers.attachSchema(schema);
 
 // collection helpers
 Customers.helpers({
-  brand() {
-    return Brands.findOne(this.brandId);
+  integration() {
+    return Integrations.findOne(this.integrationId);
   },
 
-  getData() {
+  getInAppMessagingCustomData() {
     const results = [];
-    const data = this.data || {};
+    const data = this.inAppMessagingData.customData || {};
 
     _.each(_.keys(data), (key) => {
       results.push({
@@ -111,14 +158,6 @@ Customers.helpers({
 
 Customers.TAG_TYPE = 'customer';
 
-export function increaseCommentUnreadCount({ ticketId, count = 1 }) {
-  const ticket = Tickets.findOne(ticketId, { fields: { customerId: 1 } });
-
-  if (ticket) {
-    Customers.update(ticket.customerId, { $inc: { unreadCommentCount: count } });
-  }
-}
-
 Customers.deny({
   insert() { return true; },
   update() { return true; },
@@ -126,20 +165,16 @@ Customers.deny({
 });
 
 Customers.publicFields = {
-  email: 1,
   name: 1,
-  brandId: 1,
+  email: 1,
+  integrationId: 1,
   createdAt: 1,
-  lastSeenAt: 1,
-  sessionCount: 1,
-  isActive: 1,
-  data: 1,
-  unreadCommentCount: 1,
+  inAppMessagingData: 1,
+  twitterData: 1,
   tagIds: 1,
 };
 
 Factory.define('customer', Customers, {
   email: () => faker.internet.email(),
-  brandId: () => Random.id(),
-  lastSeenAt: () => new Date(),
+  integrationId: () => Random.id(),
 });

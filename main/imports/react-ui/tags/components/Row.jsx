@@ -18,10 +18,10 @@ function Row({ tag, remove }) {
 
     remove.call([tag._id], error => {
       if (error) {
-        return Alert.error('Error', error.reason);
+        return Alert.error(error.reason);
       }
 
-      return Alert.success('Success', 'Successfully saved');
+      return Alert.success('The tag has been deleted, forever!');
     });
   }
 
@@ -39,7 +39,7 @@ function Row({ tag, remove }) {
       <td className="text-right">
         <ActionButtons>
           <ModalTrigger title="Edit response" trigger={editTrigger}>
-            <Form type="ticket" tag={tag} />
+            <Form type="conversation" tag={tag} />
           </ModalTrigger>
 
           <Tip text="Delete">
